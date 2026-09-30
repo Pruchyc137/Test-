@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คำนวณค่าไฟฟ้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151a;
+    --panel:#1b1f27;
+    --panel-2:#20252f;
+    --line:#2b3140;
+    --line-soft:#242a36;
+    --text:#eceef2;
+    --text-mute:#8b93a3;
+    --text-dim:#5d6577;
+    --amber:#f5b841;
+    --amber-dim:#8a6a2e;
+    --teal:#43c6ac;
+    --red:#e85c4a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans Thai', sans-serif;
+    line-height:1.6;
+    padding:32px 16px 64px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+
+  header{margin-bottom:28px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--amber);
+    margin:0 0 8px;
+  }
+  h1{
+    font-size:28px;
+    font-weight:700;
+    margin:0 0 6px;
+    letter-spacing:-.01em;
+  }
+  .sub{color:var(--text-mute);font-size:14.5px;margin:0;max-width:56ch;}
+
+  /* ===== METER PANEL ===== */
+  .meter{
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:26px 24px;
+    margin-bottom:20px;
+    display:flex;
+    gap:28px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .dial-box{
+    position:relative;
+    width:132px;height:132px;
+    flex:none;
+  }
+  .dial-box svg{display:block;width:100%;height:100%;}
+  .dial-center{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .dial-val{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--amber);}
+  .dial-label{font-size:10.5px;color:var(--text-dim);margin-top:2px;letter-spacing:.05em;}
+
+  .lcd-group{flex:1;min-width:240px;display:flex;flex-direction:column;gap:14px;}
+  .lcd-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .lcd-label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;width:100%;}
+  .lcd{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:700;
+    font-size:40px;
+    color:var(--amber);
+    background:#0d0f13;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:6px 16px;
+    display:inline-flex;
+    gap:2px;
+    letter-spacing:.01em;
+  }
+  .lcd .unit{font-size:15px;font-weight:600;color:var(--amber-dim);align-self:flex-end;margin:0 0 6px 6px;}
+  .lcd-small{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:16px;font-weight:600;color:var(--teal);
+    background:#0d0f13;border:1px solid var(--line);border-radius:8px;
+    padding:6px 12px;
+  }
+  .lcd-mini-row{display:flex;gap:10px;flex-wrap:wrap;}
+
+  .dial-legend{
+    display:flex;flex-wrap:wrap;gap:7px 16px;
+    width:100%;order:3;
+    margin-top:2px;padding-top:14px;
+    border-top:1px solid var(--line-soft);
+  }
+  .legend-chip{
+    display:flex;align-items:center;gap:6px;
+    font-size:12px;color:var(--text-mute);white-space:nowrap;
+  }
+  .legend-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .legend-watt{color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+
+  /* ===== SECTION HEADERS ===== */
+  .section-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    margin:32px 0 12px;
+    gap:12px;flex-wrap:wrap;
+  }
+  .section-head h2{font-size:16px;font-weight:600;margin:0;}
+  .section-note{font-size:12.5px;color:var(--text-dim);}
+
+  /* ===== GLOBAL RATE BAR ===== */
+  .rate-bar{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 18px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .rate-bar label{font-size:13.5px;color:var(--text-mute);}
+  .rate-input-wrap{display:flex;align-items:center;gap:6px;}
+  input[type="number"], input[type="text"], select{
+    background:#0d0f13;
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:7px 9px;
+    font-family:'IBM Plex Sans Thai', sans-serif;
+    font-size:14px;
+    outline:none;
+  }
+  input[type="number"]{font-family:'IBM Plex Mono', monospace;}
+  input:focus, select:focus{border-color:var(--amber);}
+  .rate-input-wrap input{width:80px;}
+  .rate-suffix{color:var(--text-dim);font-size:13px;}
+  .reset-link{
+    margin-left:auto;
+    background:none;border:1px solid var(--line);color:var(--text-mute);
+    font-size:12.5px;padding:6px 12px;border-radius:8px;cursor:pointer;
+    font-family:'IBM Plex Sans Thai', sans-serif;
+  }
+  .reset-link:hover{border-color:var(--red);color:var(--red);}
+
+  /* ===== ADD APPLIANCE ===== */
+  .add-bar{
+    display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;
+  }
+  .add-bar select{flex:1;min-width:220px;}
+  .btn{
+    background:var(--amber);
+    color:#241a04;
+    border:none;
+    font-weight:600;
+    font-size:14px;
+    padding:9px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-family:'IBM Plex Sans Thai', sans-serif;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn-ghost{
+    background:none;border:1px solid var(--line);color:var(--text-mute);
+  }
+  .btn-ghost:hover{border-color:var(--text-mute);color:var(--text);}
+
+  /* ===== APPLIANCE LIST ===== */
+  #list{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+  .row{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    display:grid;
+    grid-template-columns:26px 1.5fr repeat(4, 88px) 100px 26px;
+    gap:12px;
+    align-items:center;
+  }
+  .row .icon{
+    width:26px;height:26px;border-radius:7px;
+    background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;color:var(--amber);
+    border:1px solid var(--line-soft);
+    flex:none;
+  }
+  .row .name-field{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .row .name-field input{width:100%;font-size:14px;padding:6px 8px;}
+  .field{display:flex;flex-direction:column;gap:3px;}
+  .field .flabel{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;}
+  .field input{width:100%;padding:6px 6px;font-size:13.5px;text-align:right;}
+  .row .cost{
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:14.5px;
+    color:var(--teal);
+  }
+  .row .cost .sub{display:block;font-size:10.5px;color:var(--text-dim);font-weight:500;margin-top:2px;font-family:'IBM Plex Sans Thai', sans-serif;}
+  .del-btn{
+    width:26px;height:26px;border-radius:7px;
+    background:none;border:1px solid var(--line-soft);
+    color:var(--text-dim);cursor:pointer;font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .del-btn:hover{border-color:var(--red);color:var(--red);}
+
+  .empty-state{
+    text-align:center;padding:36px 16px;color:var(--text-dim);
+    border:1px dashed var(--line);border-radius:12px;font-size:13.5px;
+  }
+
+  /* ===== BREAKDOWN ===== */
+  .breakdown{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin-top:14px;
+  }
+  .bd-row{display:flex;align-items:center;gap:12px;padding:7px 0;}
+  .bd-name{width:170px;flex:none;font-size:13px;color:var(--text-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bd-track{flex:1;height:9px;background:#0d0f13;border-radius:5px;overflow:hidden;border:1px solid var(--line-soft);}
+  .bd-fill{height:100%;background:linear-gradient(90deg,var(--amber-dim),var(--amber));border-radius:5px;}
+  .bd-val{width:78px;flex:none;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--text-mute);}
+
+  /* ===== SUMMARY CARDS ===== */
+  .summary-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;
+  }
+  .sum-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;
+  }
+  .sum-card .slabel{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;}
+  .sum-card .sval{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--text);margin-top:6px;}
+  .sum-card .sval.amber{color:var(--amber);}
+  .sum-card .sval.teal{color:var(--teal);}
+
+  footer{margin-top:36px;font-size:12px;color:var(--text-dim);text-align:center;}
+
+  @media (max-width:720px){
+    .row{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "icon icon"
+        "name name"
+        "f1 f2"
+        "f3 f4"
+        "cost del";
+    }
+    .row .icon{grid-area:icon;}
+    .row .name-field{grid-area:name;}
+    .row .field:nth-of-type(1){grid-area:f1;}
+    .row .field:nth-of-type(2){grid-area:f2;}
+    .row .field:nth-of-type(3){grid-area:f3;}
+    .row .field:nth-of-type(4){grid-area:f4;}
+    .row .cost{grid-area:cost;}
+    .del-btn{grid-area:del;justify-self:end;}
+    .summary-grid{grid-template-columns:repeat(2,1fr);}
+    .meter{flex-direction:column;align-items:stretch;text-align:center;}
+    .dial-box{align-self:center;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Home energy meter</p>
+    <h1>คำนวณค่าไฟฟ้า</h1>
+    <p class="sub">เลือกเครื่องใช้ไฟฟ้า ปรับกำลังไฟและเวลาใช้งานให้ตรงกับบ้านคุณ แล้วดูค่าไฟที่ต้องจ่ายแบบเรียลไทม์</p>
+  </header>
+
+  <div class="meter">
+    <div class="dial-box">
+      <svg viewBox="0 0 132 132">
+        <circle cx="66" cy="66" r="54" fill="none" stroke="#242a36" stroke-width="10"/>
+        <g id="dialSegments"></g>
+      </svg>
+      <div class="dial-center">
+        <div class="dial-val" id="dialVal">0</div>
+        <div class="dial-label">วัตต์รวม</div>
+      </div>
+    </div>
+    <div class="lcd-group">
+      <div class="lcd-row">
+        <div class="lcd-label">ค่าไฟโดยประมาณต่อเดือน</div>
+        <div class="lcd"><span id="lcdTotal">0.00</span><span class="unit">บาท</span></div>
+      </div>
+      <div class="lcd-mini-row">
+        <span class="lcd-small" id="lcdKwh">0.00 kWh / เดือน</span>
+        <span class="lcd-small" id="lcdDay">0.00 บาท / วัน</span>
+        <span class="lcd-small" id="lcdYear">0.00 บาท / ปี</span>
+      </div>
+    </div>
+    <div class="dial-legend" id="dialLegend"></div>
+  </div>
+
+  <div class="rate-bar">
+    <label for="rateInput">ค่าไฟฟ้าต่อหน่วย (บาท/kWh)</label>
+    <div class="rate-input-wrap">
+      <input type="number" id="rateInput" value="4.2" step="0.01" min="0">
+      <span class="rate-suffix">บาท</span>
+    </div>
+    <span class="rate-suffix" style="font-size:12px;">ค่าเฉลี่ยโดยประมาณ ปรับได้ตามบิลค่าไฟจริงของคุณ</span>
+    <button class="reset-link" id="resetBtn">รีเซ็ตทั้งหมด</button>
+  </div>
+
+  <div class="section-head">
+    <h2>รายการเครื่องใช้ไฟฟ้า</h2>
+    <span class="section-note" id="itemCount">0 รายการ</span>
+  </div>
+
+  <div class="add-bar">
+    <select id="applianceSelect"></select>
+    <button class="btn" id="addBtn">+ เพิ่มรายการ</button>
+    <button class="btn btn-ghost" id="addCustomBtn">+ เพิ่มแบบกำหนดเอง</button>
+  </div>
+
+  <div id="list"></div>
+
+  <div class="section-head">
+    <h2>สัดส่วนค่าไฟรายเครื่อง</h2>
+    <span class="section-note">เรียงจากใช้ไฟมากไปน้อย</span>
+  </div>
+  <div class="breakdown" id="breakdown"></div>
+
+  <div class="section-head">
+    <h2>สรุปผล</h2>
+  </div>
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="slabel">พลังงานรวม</div>
+      <div class="sval" id="sumKwh">0 kWh</div>
+    </div>
+    <div class="sum-card">
+      <div class="slabel">ค่าไฟต่อวัน</div>
+      <div class="sval teal" id="sumDay">0 บาท</div>
+    </div>
+    <div class="sum-card">
+      <div class="slabel">ค่าไฟต่อเดือน</div>
+      <div class="sval amber" id="sumMonth">0 บาท</div>
+    </div>
+    <div class="sum-card">
+      <div class="slabel">ค่าไฟต่อปี</div>
+      <div class="sval" id="sumYear">0 บาท</div>
+    </div>
+  </div>
+
+  <footer>สูตรคำนวณ: ค่าไฟ (บาท) = กำลังไฟฟ้า (W) × จำนวนเครื่อง × ชั่วโมง/วัน × วัน ÷ 1000 × ค่าไฟต่อหน่วย</footer>
+
+</div>
+
+<script>
+const CATALOG = [
+  {name:"หลอดไฟ LED (9W)", watt:9, hours:6, icon:"i-bulb"},
+  {name:"พัดลมตั้งโต๊ะ", watt:60, hours:8, icon:"i-fan"},
+  {name:"พัดลมตั้งพื้น", watt:85, hours:8, icon:"i-fan"},
+  {name:"เครื่องทำน้ำอุ่น", watt:3500, hours:0.5, icon:"i-shower"},
+  {name:"ตู้เย็น 6 คิว", watt:100, hours:24, icon:"i-fridge"},
+  {name:"ตู้เย็น 12 คิว", watt:180, hours:24, icon:"i-fridge"},
+  {name:"เตารีดธรรมดา", watt:1000, hours:0.5, icon:"i-iron"},
+  {name:"เตารีดไอน้ำ", watt:1800, hours:0.5, icon:"i-iron"},
+  {name:"ไมโครเวฟ", watt:800, hours:0.3, icon:"i-microwave"},
+  {name:"หม้อหุงข้าว", watt:500, hours:1, icon:"i-rice"},
+  {name:"ทีวี LED 32 นิ้ว", watt:40, hours:4, icon:"i-tv"},
+  {name:"ทีวี LED 55 นิ้ว", watt:100, hours:4, icon:"i-tv"},
+  {name:"แอร์ 9,000 BTU", watt:1200, hours:6, icon:"i-ac"},
+  {name:"แอร์ 12,000 BTU", watt:1500, hours:6, icon:"i-ac"},
+  {name:"คอมพิวเตอร์ + จอ", watt:250, hours:6, icon:"i-pc"},
+  {name:"โน้ตบุ๊ก", watt:40, hours:6, icon:"i-laptop"},
+  {name:"เครื่องซักผ้าฝาบน", watt:400, hours:1, icon:"i-washer"},
+  {name:"เครื่องดูดฝุ่น", watt:800, hours:0.5, icon:"i-vacuum"},
+  {name:"เครื่องปิ้งขนมปัง", watt:700, hours:0.2, icon:"i-toaster"},
+  {name:"เครื่องชาร์จมือถือ", watt:5, hours:2, icon:"i-phone"}
+];
+
+const ICONS = {
+  "i-bulb":"◐","i-fan":"❋","i-shower":"◇","i-fridge":"▭","i-iron":"▱",
+  "i-microwave":"▦","i-rice":"○","i-tv":"▤","i-ac":"❆","i-pc":"▥",
+  "i-laptop":"▥","i-washer":"◎","i-vacuum":"▼","i-toaster":"▬","i-phone":"▮","i-custom":"✎"
+};
+
+let items = [];
+let uid = 1;
+
+const STACK_COLORS = ['#f5b841','#43c6ac','#e85c4a','#6f9ceb','#c77dff','#7bd389','#f2789f','#9aa5b1','#d4a94a','#5fb0a3'];
+
+function initSelect(){
+  const sel = document.getElementById('applianceSelect');
+  sel.innerHTML = CATALOG.map((a,i)=>`<option value="${i}">${a.name} · ${a.watt}W</option>`).join('');
+}
+
+function addItem(catalogIndex){
+  const src = CATALOG[catalogIndex];
+  items.push({
+    id: uid++,
+    name: src.name,
+    watt: src.watt,
+    qty: 1,
+    hours: src.hours,
+    days: 30,
+    icon: src.icon
+  });
+  render();
+}
+
+function addCustomItem(){
+  items.push({
+    id: uid++,
+    name: "เครื่องใช้ไฟฟ้าใหม่",
+    watt: 100,
+    qty: 1,
+    hours: 4,
+    days: 30,
+    icon: "i-custom"
+  });
+  render();
+}
+
+function removeItem(id){
+  items = items.filter(i => i.id !== id);
+  render();
+}
+
+function updateItem(id, field, value){
+  const it = items.find(i => i.id === id);
+  if(!it) return;
+  if(field === 'name'){
+    it.name = value;
+  } else {
+    let v = parseFloat(value);
+    if(isNaN(v) || v < 0) v = 0;
+    it[field] = v;
+  }
+  render();
+}
+
+function calcItem(it){
+  const kwh = (it.watt * it.qty * it.hours * it.days) / 1000;
+  const rate = parseFloat(document.getElementById('rateInput').value) || 0;
+  const cost = kwh * rate;
+  return { kwh, cost };
+}
+
+function fmt(n, d=2){
+  return Number(n).toLocaleString('th-TH', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+
+function render(){
+  const list = document.getElementById('list');
+  document.getElementById('itemCount').textContent = items.length + ' รายการ';
+
+  if(items.length === 0){
+    list.innerHTML = '<div class="empty-state">ยังไม่มีรายการ เลือกเครื่องใช้ไฟฟ้าด้านบนแล้วกด "เพิ่มรายการ"</div>';
+  } else {
+    list.innerHTML = items.map(it => {
+      const {kwh, cost} = calcItem(it);
+      const icon = ICONS[it.icon] || "▪";
+      return `
+      <div class="row">
+        <div class="icon">${icon}</div>
+        <div class="name-field">
+          <input type="text" value="${it.name.replace(/"/g,'&quot;')}" oninput="updateItem(${it.id},'name',this.value)">
+        </div>
+        <div class="field">
+          <span class="flabel">วัตต์ (W)</span>
+          <input type="number" min="0" value="${it.watt}" oninput="updateItem(${it.id},'watt',this.value)">
+        </div>
+        <div class="field">
+          <span class="flabel">จำนวน</span>
+          <input type="number" min="0" step="1" value="${it.qty}" oninput="updateItem(${it.id},'qty',this.value)">
+        </div>
+        <div class="field">
+          <span class="flabel">ชม./วัน</span>
+          <input type="number" min="0" max="24" step="0.1" value="${it.hours}" oninput="updateItem(${it.id},'hours',this.value)">
+        </div>
+        <div class="field">
+          <span class="flabel">วัน</span>
+          <input type="number" min="0" max="31" step="1" value="${it.days}" oninput="updateItem(${it.id},'days',this.value)">
+        </div>
+        <div class="cost">${fmt(cost)} ฿<span class="sub">${fmt(kwh)} kWh</span></div>
+        <button class="del-btn" onclick="removeItem(${it.id})" aria-label="ลบรายการ">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  renderSummary();
+  renderBreakdown();
+}
+
+function renderSummary(){
+  let totalKwhMonth = 0, totalWatt = 0;
+  items.forEach(it => {
+    const {kwh} = calcItem(it);
+    totalKwhMonth += kwh;
+    totalWatt += it.watt * it.qty;
+  });
+
+  const rate = parseFloat(document.getElementById('rateInput').value) || 0;
+  const totalCostMonth = totalKwhMonth * rate;
+  const avgDaysUsed = items.length ? (items.reduce((s,i)=>s+i.days,0)/items.length) : 30;
+  const perDay = avgDaysUsed > 0 ? totalCostMonth / avgDaysUsed : 0;
+  const perYear = totalCostMonth * 12;
+
+  document.getElementById('lcdTotal').textContent = fmt(totalCostMonth);
+  document.getElementById('lcdKwh').textContent = fmt(totalKwhMonth) + ' kWh / เดือน';
+  document.getElementById('lcdDay').textContent = fmt(perDay) + ' บาท / วัน';
+  document.getElementById('lcdYear').textContent = fmt(perYear,0) + ' บาท / ปี';
+
+  document.getElementById('sumKwh').textContent = fmt(totalKwhMonth) + ' kWh';
+  document.getElementById('sumDay').textContent = fmt(perDay) + ' บาท';
+  document.getElementById('sumMonth').textContent = fmt(totalCostMonth) + ' บาท';
+  document.getElementById('sumYear').textContent = fmt(perYear,0) + ' บาท';
+
+  document.getElementById('dialVal').textContent = fmt(totalWatt,0);
+
+  const stackEntries = items
+    .map(it => ({ it, watt: it.watt * it.qty }))
+    .filter(e => e.watt > 0)
+    .sort((a,b) => b.watt - a.watt);
+
+  renderDial(stackEntries, totalWatt);
+  renderDialLegend(stackEntries, totalWatt);
+}
+
+function renderDial(entries, totalWatt){
+  const seg = document.getElementById('dialSegments');
+  seg.innerHTML = '';
+  if(totalWatt <= 0 || entries.length === 0) return;
+
+  const cx = 66, cy = 66, r = 54;
+  const circumference = 2 * Math.PI * r;
+  const gapDeg = entries.length > 1 ? 2.5 : 0;
+  let cumulativeDeg = -90;
+
+  entries.forEach((entry, i) => {
+    const fraction = entry.watt / totalWatt;
+    const sweepDeg = Math.max(fraction * 360 - gapDeg, 0);
+    if(sweepDeg <= 0){ cumulativeDeg += fraction * 360; return; }
+    const arcLen = (sweepDeg / 360) * circumference;
+    const color = STACK_COLORS[i % STACK_COLORS.length];
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', color);
+    circle.setAttribute('stroke-width', '10');
+    circle.setAttribute('stroke-linecap', 'round');
+    circle.setAttribute('stroke-dasharray', `${arcLen} ${circumference - arcLen}`);
+    circle.setAttribute('transform', `rotate(${cumulativeDeg} ${cx} ${cy})`);
+    seg.appendChild(circle);
+    cumulativeDeg += fraction * 360;
+  });
+}
+
+function renderDialLegend(entries, totalWatt){
+  const el = document.getElementById('dialLegend');
+  if(entries.length === 0){
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = entries.map((entry, i) => {
+    const color = STACK_COLORS[i % STACK_COLORS.length];
+    const pct = totalWatt > 0 ? (entry.watt / totalWatt * 100) : 0;
+    return `<div class="legend-chip"><span class="legend-dot" style="background:${color}"></span>${entry.it.name}<span class="legend-watt">${fmt(entry.watt,0)}W · ${fmt(pct,0)}%</span></div>`;
+  }).join('');
+}
+
+function renderBreakdown(){
+  const bd = document.getElementById('breakdown');
+  if(items.length === 0){
+    bd.innerHTML = '<div class="empty-state" style="border:none;padding:18px;">ยังไม่มีข้อมูล</div>';
+    return;
+  }
+  const withCost = items.map(it => ({ name: it.name, ...calcItem(it) }))
+    .sort((a,b) => b.cost - a.cost);
+  const maxCost = Math.max(...withCost.map(i => i.cost), 1);
+
+  bd.innerHTML = withCost.map(i => `
+    <div class="bd-row">
+      <div class="bd-name">${i.name}</div>
+      <div class="bd-track"><div class="bd-fill" style="width:${(i.cost/maxCost*100).toFixed(1)}%"></div></div>
+      <div class="bd-val">${fmt(i.cost)} ฿</div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  const sel = document.getElementById('applianceSelect');
+  addItem(parseInt(sel.value));
+});
+document.getElementById('addCustomBtn').addEventListener('click', addCustomItem);
+document.getElementById('rateInput').addEventListener('input', render);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  items = [];
+  render();
+});
+
+initSelect();
+addItem(0);
+CATALOG[0].name === "หลอดไฟ LED (9W)" && (items[0].qty = 4);
+addItem(4);
+addItem(12);
+render();
+</script>
+
+</body>
+</html>
